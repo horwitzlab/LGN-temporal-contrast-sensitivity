@@ -18,6 +18,3 @@ series of cells, each containing the data from a single neuron.
   * `IsoSampGetDPrime` computes the signal-to-noise of single LGN neurons based on the modulation of the spike rate at the fundamental frequency of the stimulus.
 
   * `IsoSampGetPopulationScaleFactor` computes a scale factor that approximates how much greater the signal-to-noise of a population of LGN neurons is expected to be than a single one. The single neuron is assumed to be the one recorded and to have a receptive field at the center of the stimulus (consistent with how data were collected). The other cells are assumed to have receptive fields that are arranged on a hexagonal lattice. Signal-to-noise in neurons is assumed to be linear with contrast in the receptive field.
-  * `IsoSampGetPhotonDPrime` computes the signal-to-noise of an ideal observer of photon absorptions.
-  * `RGC_RFsizes_vs_eccentricity` an Excel spreadsheet containing digitally captured LGN and retinal ganglion cell receptive field sizes. Useful fo estimating how many LGN neurons of which type are activated by the Gabor stimulus.
-  * `RGC_RF_sizes.m` code to analyze the data in `RGC_RFsizes_vs_eccentricity`.
