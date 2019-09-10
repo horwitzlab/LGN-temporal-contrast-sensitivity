@@ -1,5 +1,5 @@
-function [population_scalefactor, ncells] = IsoSampGetPopulationScaleFactor(stro, ecc_to_diam_deg, TEMPORONASALSCALEFACTOR, RFTRUNCATIONINSD, ONOFFCORRELATION,NUMBEROFEYES)
-% [population_scalefactor, ncells] = IsoSampGetPopulationScaleFactor(stro, ecc_to_diam_deg, TEMPORONASALSCALEFACTOR, RFTRUNCATIONINSD, ONOFFCORRELATION,NUMBEROFEYES)
+function [population_scalefactor, ncells] = IsoSampGetPopulationScaleFactor(stro, ecc_to_diam_deg, TEMPORONASALSCALEFACTOR, RFTRUNCATIONINSD, ONOFFCORRELATION,NUMBEROFEYES, R_WITHIN_OVERRIDE)
+% [population_scalefactor, ncells] = IsoSampGetPopulationScaleFactor(stro, ecc_to_diam_deg, TEMPORONASALSCALEFACTOR, RFTRUNCATIONINSD, ONOFFCORRELATION, NUMBEROFEYES, R_WITHIN_OVERRIDE)
 %
 % Find the population scale factor for an ideal observer of LGN spikes.
 %
@@ -18,8 +18,8 @@ function [population_scalefactor, ncells] = IsoSampGetPopulationScaleFactor(stro
 %   equivalent temporal eccentricity, and we do not know in which retinal 
 %   hemifield the RFs of the recorded LGN neurons were located.
 %
-%   RFTRUNCATIONINSD: How many standard deviations of the Gabor stimulus
-%   were displayed in the LGN recording experiments.
+%   RFTRUNCATIONINSD: The number of standard deviations of an assumed
+%   Gaussian RF at which the RF is truncated.
 %
 %   ONOFFCORRELATION: The correlation assumed to exist between ON and OFF
 %   LGN mosaics.
@@ -41,7 +41,7 @@ if nargin < 3
     TEMPORONASALSCALEFACTOR = 0.8;
 end
 if nargin < 4
-    RFTRUNCATIONINSD = 4;
+    RFTRUNCATIONINSD = 2;
 end
 if nargin < 5
     ONOFFCORRELATION = 0.05;
@@ -49,8 +49,14 @@ end
 if nargin < 6
     NUMBEROFEYES = 2;
 end
+if nargin < 7 | isempty(R_WITHIN_OVERRIDE) | isnan(R_WITHIN_OVERRIDE)
+    R_WITHIN_OVERRIDE = nan;
+end
 
+% Anonymous functions
 bpdf_vec=@(x,y,mu_x,mu_y,sigma)(exp(-((x-mu_x).^2)./(2*sigma^2)-((y-mu_y).^2)/(2*sigma^2))./(2*pi*sigma^2)); % bivariate normpdf
+truncated_2D_gaussian = @(x,y,mu_x,mu_y,sigma,trunc) (sqrt((x-mu_x).^2+(y-mu_y).^2)<trunc).*bpdf_vec(x,y,mu_x,mu_y,sigma) + (sqrt((x-mu_x).^2+(y-mu_y).^2)>=trunc).*0;
+
 rfx = stro.sum.exptParams.rf_x/10;
 rfy = stro.sum.exptParams.rf_y/10;
 rf_r_deg = sqrt((rfx./TEMPORONASALSCALEFACTOR)^2+rfy^2);
@@ -84,27 +90,49 @@ mus = zeros(numel(x_centers_mat),1); % Integrated contrast inside truncated Gaus
 interRFdistances = zeros(numel(x_centers_mat),numel(x_centers_mat));
 
 for j = 1:numel(x_centers_mat)
-    overlap_point = @(x,y) bpdf_vec(x,y,0,0,RF_STD).*bpdf_vec(x,y,x_centers_mat(j),y_centers_mat(j),sigma_gabor);
-    mus(j)=integral2(overlap_point,RFTRUNCATIONINSD*RF_STD,-RFTRUNCATIONINSD*RF_STD,RFTRUNCATIONINSD*RF_STD,-RFTRUNCATIONINSD*RF_STD); % RF is truncated at 4 SDs
-    
+    for k = 1:numel(x_centers_mat) % Tabulating distances between RF centers which we'll need for S2
+        interRFdistances(j,k) = sqrt((x_centers_mat(j)-x_centers_mat(k)).^2+(y_centers_mat(j)-y_centers_mat(k)).^2);
+    end
+end
+
+RFtoStimdistances = sqrt(x_centers_mat.^2+y_centers_mat.^2);
+uniqueRFtoStimdistances = unique(RFtoStimdistances);
+
+disp(['Computing ',num2str(numel(RFtoStimdistances)),' signal strengths. Hold please.'])
+for j = 1:length(uniqueRFtoStimdistances)
+    %overlap_point = @(x,y) bpdf_vec(x,y,0,0,RF_STD).*bpdf_vec(x,y,x_centers_mat(j),y_centers_mat(j),sigma_gabor);
+    if uniqueRFtoStimdistances(j) > RF_STD*RFTRUNCATIONINSD+sigma_gabor*sigmas_n
+        mus(j) = 0;
+    else
+        overlap_point = @(x,y) truncated_2D_gaussian(x,y,0,0,RF_STD,RF_STD*RFTRUNCATIONINSD).*truncated_2D_gaussian(x,y,0,uniqueRFtoStimdistances(j),sigma_gabor,sigma_gabor*sigmas_n); % Points sigmas_n away from Gabor center are not plotted
+        mu=integral2(overlap_point,-RFTRUNCATIONINSD*RF_STD, RFTRUNCATIONINSD*RF_STD, max(-RFTRUNCATIONINSD*RF_STD, uniqueRFtoStimdistances(j)-sigma_gabor*sigmas_n),RFTRUNCATIONINSD*RF_STD,'method','iterated');
+        mus(RFtoStimdistances(:) == uniqueRFtoStimdistances(j)) = mu;
+    end
     for k = 1:numel(x_centers_mat) % Tabulating distances between RF centers which we'll need for S2
         interRFdistances(j,k) = sqrt((x_centers_mat(j)-x_centers_mat(k)).^2+(y_centers_mat(j)-y_centers_mat(k)).^2);
     end
 end
 
 % filling in S2
-disp(['Computing ',num2str(numel(x_centers_mat)),' covariances. Hold please.'])
+disp(['Computing ',num2str(numel(interRFdistances)),' covariances. Hold please.'])
 S2 = nan(numel(x_centers_mat));
 for dist = unique(interRFdistances)'
-    overlap_point = @(x,y) bpdf_vec(x,y,0,0,RF_STD).*bpdf_vec(x,y,0,dist,RF_STD);
-    if (dist >= RFTRUNCATIONINSD*RF_STD)
-        S2(interRFdistances==dist)=0;
-    else
-        S2(interRFdistances==dist)=integral2(overlap_point,RFTRUNCATIONINSD*RF_STD,-RFTRUNCATIONINSD*RF_STD,RFTRUNCATIONINSD*RF_STD,-RFTRUNCATIONINSD*RF_STD);
-    end
+    %overlap_point = @(x,y) bpdf_vec(x,y,0,0,RF_STD).*bpdf_vec(x,y,0,dist,RF_STD);
+    %if (dist >= 2*RF_STD*RFTRUNCATIONINSD)
+    %    S2(interRFdistances==dist)=0;
+    %else
+    %    S2(interRFdistances==dist)=integral2(overlap_point,RFTRUNCATIONINSD*RF_STD,-RFTRUNCATIONINSD*RF_STD,RFTRUNCATIONINSD*RF_STD,-RFTRUNCATIONINSD*RF_STD);
+    %end
+    
+    overlap_point = @(x,y) truncated_2D_gaussian(x,y,0,0,RF_STD,RF_STD*RFTRUNCATIONINSD).*truncated_2D_gaussian(x,y,0,dist,RF_STD,RF_STD*RFTRUNCATIONINSD);
+    S2(interRFdistances==dist)=integral2(overlap_point,-RFTRUNCATIONINSD*RF_STD,RFTRUNCATIONINSD*RF_STD, dist-RFTRUNCATIONINSD*RF_STD,RFTRUNCATIONINSD*RF_STD,'method','iterated');
 end
-S2 = S2./max(S2(:)); % Cov depends on doproduct between RF and if two RFs are identical cov = 1 (StatsStuff.m Section 13)
+S2 = S2./max(S2(:)); % Cov depends on dotproduct between RF and if two RFs are identical cov = 1 (StatsStuff.m Section 13)
 
+if ~isnan(R_WITHIN_OVERRIDE)
+    disp(['WARNING! IsoSampPoplationScaleFactor has been changed to make interneuronal correlations = ', num2str(R_WITHIN_OVERRIDE),'!!']);
+    S2(S2 > 0 & S2 < 1) = R_WITHIN_OVERRIDE;
+end
 mus = mus./max(mus);
 % Normalization ensures that d' of neuron with central RF has the
 % observed d'.

@@ -4,6 +4,7 @@
 % Loading the data
 load('LGN_data_stro');
 stro = data{1}{1}; % Data from a single magnocellular LGN neuron
+% (The first magnocellular neuron from monkey 1)
 
 % IsoSampGetDPrime
 % Takes the data from a single neuron (a single stro structure)
