@@ -47,7 +47,6 @@ ylabel('Dendritic field diam. (microns)');
 % Comparing to Croner and Kaplan Figure 13a
 % Dividing 'y' by 2 to convert from RF diameter to RF radius.
 % Dividing 'y' by 1000 to convert  RF diameter from microns to mm.
-% RFs are a little too small.
 figure; subplot; hold on; 
 plot(perryMdata(:,1)*DEGPERMM,perryMdata(:,2)*DEGPERMM/1000/2,'ko');
 x = [0 10];
@@ -58,7 +57,7 @@ xlabel('RF eccentricity (deg)')
 set(gca,'Ytick',[0.05 .1 .15 .2 .25])
 title('Perry et al. parasol for comparison with Croner and Kaplan');
 
-% To compare across studies I will try to plot RF diameter (1 SD in deg) as a
+% To compare across studies I will try to plot RF diameter (12SD in deg) as a
 % function of eccentricity (in deg) for every data set.
 % Even assuming that the DF is 1 SD of the RF (which seems bizarre) the
 % Perry estimates of RF sizes are smaller than Croner and Kaplan's.
@@ -93,7 +92,7 @@ plot(perryPdata(:,1)*DEGPERMM,perryPdata(:,2)*DEGPERMM/1000,'ko');
 b = regress(log10(perryPdata(:,2)*DEGPERMM/1000),[ones(size(perryPdata,1),1) perryPdata(:,1)*DEGPERMM]);
 x = linspace(0,18,100);
 plot(x,10.^([ones(length(x),1) x']*b));
-ylabel('RF diameter (deg)'); % Note this is the full diameter, not 1 SD
+ylabel('RF diameter (deg)'); % Note this is the full diameter, not 2 SD
 xlabel('RF eccentricity (deg)');
 title('Perry et al. midget full DF diameter');
 set(gca,'Ylim',[0 .2],'Xlim',[0 18])
@@ -113,7 +112,7 @@ plot(x,[ones(length(x),1) x']*b);
 ylabel('Center radius (deg)'); xlabel('Temporal equivalent eccentricity (deg)');
 title('Croner and Kaplan parasol. Compare to Figure 4A open symbols');
 
-% To compare across studies I will try to plot RF diameter (1 SD in deg) as a
+% To compare across studies I will try to plot RF diameter (2 SD in deg) as a
 % function of eccentricity (in deg) for every data set.
 % "*2" to convert radius to diameter (diameter is 2 SDs).
 % "/sqrt(2)" to go out only 1 SD instead of 1/e
@@ -122,8 +121,8 @@ plot(CK_Pdata(L,1),CK_Pdata(L,2)*2/sqrt(2),'ko');
 b = regress(CK_Pdata(L,2)*2/sqrt(2),[ones(sum(L),1) CK_Pdata(L,1)]);
 x = linspace(0,18,100);
 plot(x,[ones(length(x),1) x']*b);
-ylabel('Center diameter (1 SD in deg)'); xlabel('Temporal equivalent eccentricity (deg)');
-title('Croner and Kaplan parasol. Standard parameterization (1 SD).');
+ylabel('Center diameter (2 SD in deg)'); xlabel('Temporal equivalent eccentricity (deg)');
+title('Croner and Kaplan parasol. Standard parameterization (2 SDs).');
 set(gca,'Xlim',[0 18],'Ylim',[0 .35]);
 %%
 % Section 4: Croner and Kaplan midget data
@@ -140,7 +139,7 @@ plot(x,10.^([ones(length(x),1) x']*b));
 ylabel('Center radius (deg)'); xlabel('Temporal equivalent eccentricity (deg)');
 title('Croner and Kaplan midget for comparison with Figure 4A');
 
-% To compare across studies I will try to plot RF diameter (1 SD in deg) as a
+% To compare across studies I will try to plot RF diameter (2 SD in deg) as a
 % function of eccentricity (in deg) for every data set.
 % "*2" to convert radius to diameter (diameter is 2 SDs)
 % "/sqrt(2)" to go out only 1 SD instead of 1/e
@@ -149,8 +148,8 @@ plot(CK_midget_data(L,1),CK_midget_data(L,2)*2/sqrt(2),'ko');
 b = regress(log10(CK_midget_data(L,2)*2/sqrt(2)),[ones(sum(L),1) CK_midget_data(L,1)]);
 x = linspace(0,18,100);
 plot(x,10.^([ones(length(x),1) x']*b));
-ylabel('Center diameter (1 SD in deg)'); xlabel('Temporal equivalent eccentricity (deg)');
-title('Croner and Kaplan midget 1 SD');
+ylabel('Center diameter (2 SD in deg)'); xlabel('Temporal equivalent eccentricity (deg)');
+title('Croner and Kaplan midget 2 SDs');
 set(gca,'Ylim',[0 .2],'Xlim',[0 18])
 
 %%
@@ -164,7 +163,9 @@ DP_midget_data = xlsread ('RGC_RFsizes_vs_eccentricity','DaceyPetersen1992Midget
 L = DP_midget_data(:,1) < 20;
 figure; axes; hold on;
 plot(DP_midget_data(L,1),DP_midget_data(L,2),'k^');
-% Compare to Figure 2B
+xlabel('eccentricity (deg)');
+ylabel('dentritic field diam. (arc min)');
+title('Dacey&Petersen 1992 midget data-compare to Figure 2B');
 
 % /60 to get from arc mins to degrees
 b = regress(log10(DP_midget_data(L,2)/60),[ones(sum(L),1) DP_midget_data(L,1)]);
@@ -174,7 +175,7 @@ x = linspace(0,20,10);
 plot(x,10.^([ones(length(x),1) x']*b));
 ylabel('DF diameter (deg)');
 xlabel('Eccentricity (deg)');
-title('Dacey and Petersen midget DF (Halve to get 1 SD?)');
+title('Dacey and Petersen midget DF');
 set(gca,'Ylim',[0 .2],'Xlim',[0 18])
 
 % % If I assume that the dendritic fields measured by Dacey are 2x a single
@@ -215,8 +216,12 @@ plot(human_fit(:,1),log10(human_fit(:,2)),'bo');
 set(gca,'Yscale','linear'); ylabel('log10 DF diam (min arc)'); xlabel('Ecc. (deg)');
 b_macaque = regress(macaque_fit(:,2),[ones(size(macaque_fit,1),1) macaque_fit(:,1)]); % two independent regressions
 b_human = regress(human_fit(:,2),[ones(size(human_fit,1),1) human_fit(:,1)]); % two independent regressions
+xlabel('eccentricity (degrees)');
+ylabel('Dendritic field diameter (arcmins)');
+title(['Human-to-macaque scale factor: ',num2str(b_macaque(2)/b_human(2))]);
 b_macaque(2)/b_human(2) % estimate 1 of scale factor
 
+% A second way of estimating the scale factor
 ecc = [human_fit(:,1); macaque_fit(:,1)];
 I_monkey = [zeros(size(human_fit,1),1);ones(size(macaque_fit,1),1)];
 X = [ones(size(human_fit,1)+size(macaque_fit,1),1) ecc I_monkey]; % Assuming shift in log DF diam = scaling of DF size
@@ -224,6 +229,8 @@ b = regress(log10([human_fit(:,2); macaque_fit(:,2)]),X); % One big regression
 plot([2 16]',[1 2 1; 1 16 1]*b,'k-');
 plot([2 16]',[1 2 0; 1 16 0]*b,'b-');
 10.^b(3)
+title(['Human-to-macaque scale factor: ',num2str(10.^b(3))]);
+
 
 
 %%
@@ -256,9 +263,9 @@ y = log10([DL_midget_nasal_data(:,2); DL_midget_temporal_data(:,2)].*2./sqrt(2))
 X = [ones(length(DL_midget_nasal_data)+length(DL_midget_temporal_data),1) [DL_midget_nasal_data(:,1)*.61; DL_midget_temporal_data(:,1)]];
 b_equiv_temporal = regress(y,X);
 plot(x,10.^([ones(length(x),1) x']*b_equiv_temporal),'r-');
-title('Derrington and Lennie 1984 parvocellular 1 SD');
+title('Derrington and Lennie 1984 parvocellular 2 SD');
 xlabel('Eccentricity temporal equivalent (deg)');
-ylabel('Center diameter (1 SD in deg)');
+ylabel('Center diameter (2 SDs in deg)');
 set(gca,'Yscale','linear');
 set(gca,'Xlim',[0 18],'Ylim',[0 .2]);
 %%
@@ -291,9 +298,9 @@ y = log10([DL_magno_nasal_data(:,2); DL_magno_temporal_data(:,2)]./sqrt(2));
 X = [ones(length(DL_magno_nasal_data)+length(DL_magno_temporal_data),1) [DL_magno_nasal_data(:,1)*.61; DL_magno_temporal_data(:,1)]];
 b_equiv_temporal = regress(y,X);
 plot(x,10.^([ones(length(x),1) x']*b_equiv_temporal),'r-');
-title('Derrington and Lennie 1984 magnocellular 1 SD');
+title('Derrington and Lennie 1984 magnocellular 2 SD');
 xlabel('Eccentricity temporal equivalent (deg)');
-ylabel('Center diameter (1 SD in deg)');
+ylabel('Center diameter (2 SD in deg)');
 set(gca,'Yscale','linear');
 set(gca,'Xlim',[0 18],'Ylim',[0 .35]);
 
@@ -314,6 +321,8 @@ rm = 41.03;
 f_0 = 1/1.12;
 x = logspace(-1,2,100);
 y = 2*dc_0.*(1+x./rm).^-1.*(a*(1+(x./r2)).^-2+(1-a)*exp(-x./re)); % From Equation 8
+HUMAN2MONKPSCALEFACTOR = .80; % From Dacey and Petersen. reasonable range: [.77 .81];
+
 figure; axes; hold on;
 loglog(x,y);
 set(gca,'Xscale','log','Yscale','log');
@@ -332,16 +341,14 @@ dc_0 = 14804.6; % Cone density of fovea
 rm = 41.03; % See Equation 7
 y = 2*dc_0.*(1+rf_r_deg./rm).^-1.*(a*(1+(rf_r_deg./r2)).^-2+(1-a)*exp(-rf_r_deg./re)); % From Equation 8
 
-
 % Using Equation 9. Distance between adjacent midget RF centers. (assumed to be 2SDs)
-rfsize = sqrt(2./(sqrt(3).*y./2)); % Dividing y by 2 to get density of ON (or OFF) cells only
-rfsize = rfsize./2; % Dividing whole thing by 2 do get 1 SD
+rfsize = HUMAN2MONKPSCALEFACTOR*sqrt(2./(sqrt(3).*y./2)); % Dividing y by 2 to get density of ON (or OFF) cells only
 
 figure; axes; hold on;
 plot(rf_r_deg,rfsize);
-title('Watson 2014 midget model (1 SD)');
+title('Watson 2014 midget model (2 SDs) with human-monkey scale factor');
 xlabel('Eccentricity temporal equivalent (deg)');
-ylabel('RF diameter (1 SD in deg = half inter RF spacing)');
+ylabel('RF diameter (2 SDs in deg = inter RF spacing)');
 set(gca,'Xlim',[0 20],'Ylim',[0 .2]);
 
 %%
@@ -363,9 +370,9 @@ plot(WR_parasol_data(:,1)*DEGPERMM,WR_parasol_data(:,2)/1000*DEGPERMM,'o');
 b = regress(WR_parasol_data(:,2)*DEGPERMM/1000,[ones(size(WR_parasol_data,1),1) WR_parasol_data(:,1)*DEGPERMM]);
 x = linspace(0,18,100);
 plot(x,[ones(length(x),1) x']*b);
-ylabel('RF diameter (deg)'); % Note this is the full diameter, not 1 SD
+ylabel('RF diameter (deg)'); % Note this is the full diameter, not 2 SD
 xlabel('RF eccentricity (deg)');
-title('Watanabe and Rodieck parasol full diameter. Halve to get 1 SD.?');
+title('Watanabe and Rodieck parasol full diameter');
 set(gca,'Xlim',[0 18],'Ylim',[0 0.35])
 
 %%
@@ -386,9 +393,9 @@ plot(WR_midget_data(:,1)*DEGPERMM,WR_midget_data(:,2)/1000*DEGPERMM,'o');
 b = regress(log10(WR_midget_data(:,2)*DEGPERMM/1000),[ones(size(WR_midget_data,1),1) WR_midget_data(:,1)*DEGPERMM]);
 x = linspace(0,18,100);
 plot(x,10.^([ones(length(x),1) x']*b));
-ylabel('RF diameter (deg)'); % Note this is the full diameter, not 1 SD
+ylabel('RF diameter (deg)'); % Note this is the full diameter, not 2 SD
 xlabel('RF eccentricity (deg)');
-title('Watanabe and Rodieck midget full diameter. Halve to get 1 SD.?');
+title('Watanabe and Rodieck midget full diameter');
 set(gca,'Xlim',[0 18],'Ylim',[0 0.2])
 
 %%
@@ -406,12 +413,17 @@ conesPerDeg = conesPerMM2*MMPERDEG.^2;
 figure; axes; hold on;
 plot(x,conesPerDeg)
 set(gca,'XScale','log','Yscale','log');
+xlabel('eccentricity (degrees)');
+ylabel('cone density (cones/deg)');
 
 rfsize = (pi*sqrt(3))/6.*sqrt(1./(conedensfun(temporalcoeffs,x)*1e3*MMPERDEG.^2));
 figure; axes; hold on;
 plot(x,rfsize)
 set(gca,'XScale','linear','Yscale','linear');
 set(gca,'Xlim',[0 18],'Ylim',[0 .1]);
+xlabel('eccentricity (degrees)');
+ylabel('cone RF diameter');
+set(gca,'Ylim',[0 .2]);
 
 % Wow. The Watson model actually does a very nice job of capturing how cone
 % RF diameter changes with eccentricity.
