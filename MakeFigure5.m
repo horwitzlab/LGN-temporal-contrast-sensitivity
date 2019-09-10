@@ -1,7 +1,8 @@
-% Script for generating Figure 5
+% Script for generating Figure 5 of Temporal information manuscript
 
-load ('LGN_data_stro');
+load ('LGN_data_stro'); % Loading the raw data
 
+POPULATIONSCALING = 1; % 0 = individual LGN neurons, 1 = populations of LGN neurons.
 MMPERDEG = 0.223; % mm/deg (Perry and Cowey 1985)
 DEGPERMM = 1/MMPERDEG; % deg/mm
 MONKEYS={'Monkey 1','Monkey 2'};
@@ -10,7 +11,6 @@ TEMPORONASALSCALEFACTOR = .8;
 ONOFFCORRELATION = 0.05;
 RFTRUNCATIONINSD = 2;
 HUMAN2MONKPSCALEFACTOR = .80; % From Dacey and Petersen. reasonable range: [.77 .81];
-POPULATIONSCALING = 1;
 
 ecc_to_diam_deg_M = @(rf_r_deg) 10.^(-1.2459+0.0345*rf_r_deg); % temporal retina equivalent
 a = 0.9729; % Table 1
@@ -23,21 +23,16 @@ ecc_to_diam_deg_P = @(x)(sqrt(2./(sqrt(3).*... % Equation 9. Distance between ad
     ./2))... % Dividing y by 2 to estimate RF size from only ON or OFF mosaics (halving the density).
     *HUMAN2MONKPSCALEFACTOR); % Monkey midget RFs are slightly smaller than human midget RFs
 
-% Stuff for DTcones_gh
+% Setting up parameters for IsoSampConeCurrents.m
 fundamentals = load('T_cones_smj10');
 params = [];
 params.runType = 'isosamp';
 params.obsMethod = 'obsMethod_filteredWtFxn';
 params.impulseResponse = 'rieke';
-params.DTV1_fname = [];
-params.DTNT_fname = [];
 params.unitTest = false;
 params.eqMosaic = false;
-%params.saveDir = '/Users/greghorwitz/Documents/MATLAB';
-%params.notes = 'IsoSamp test';
 params.parallelOperations = false;
 params.eyeType = 'monkey';
-params.eyeNumber = 1; % LGN neurons are monocular
 params.coneSampRate = 2400;
 params.flatPowerSpect = false;
 params.enableScones = false;
@@ -46,6 +41,7 @@ out = cell(2,2);
 for monkey_idx = 1:size(data,1)
     for celltype_idx = 1:size(data,2)
         for i = 1:length(data{monkey_idx,celltype_idx})
+            tmp = [];
             stro = data{monkey_idx, celltype_idx}{i};
             sigmas_n = unique(stro.trial(:,strcmp(stro.sum.trialFields(1,:),'sigmas_n')));
             gabor_sigma = unique(stro.trial(:,strcmp(stro.sum.trialFields(1,:),'sigma')));
@@ -63,7 +59,7 @@ for monkey_idx = 1:size(data,1)
                 ecc_to_diam_deg = ecc_to_diam_deg_P;
             end
             if POPULATIONSCALING
-                [tmp.population_scalefactor, tmp.ncells] = IsoSampGetPopulationScaleFactor(stro, ecc_to_diam_deg, TEMPORONASALSCALEFACTOR,RFTRUNCATIONINSD, ONOFFCORRELATION, 2)
+                [tmp.population_scalefactor, tmp.ncells] = IsoSampGetPopulationScaleFactor(stro, ecc_to_diam_deg, TEMPORONASALSCALEFACTOR, RFTRUNCATIONINSD, ONOFFCORRELATION, 2);
             else
                 tmp.population_scalefactor = 1; tmp.ncells = 1;
             end
@@ -82,7 +78,7 @@ for monkey_idx = 1:size(data,1)
             cal.frameRate = params.stro.sum.exptParams.framerate;
             cal.bkgndrgb = params.stro.sum.exptParams.bkgndrgb';
             cal.fname = 'test';
-            cal.monSpectWavelengths = linspace(380,780,101);
+            %cal.monSpectWavelengths = linspace(380,780,101);
             cal.pixperdeg = params.stro.sum.exptParams.pixperdeg;
             params.monCalFile = cal;
             if POPULATIONSCALING
@@ -90,7 +86,6 @@ for monkey_idx = 1:size(data,1)
                 params.eyeNumber = 2;
             else
                 params.gab.sd = ecc_to_diam_deg(tmp.ecc)/2; % overwriting gabor SD with RF SD
-                params.gab.sd = params.gab.sd; % DEBUGGING: artificially inflating RF SD by 5x
                 params.eyeNumber = 1;
             end
             
