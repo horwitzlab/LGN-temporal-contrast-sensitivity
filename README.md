@@ -21,12 +21,11 @@ series of cells, each containing the data from a single neuron.
   
   * `IsoSampGetPhotonDPrime` computes the signal-to-noise of an ideal observer of photon catches in the cone photoreceptors.
   
-  * `IsoSampConeCurrents` computes the signal-to-noise of an ideal observer of currents across cone photoreceptor cell membranes. Lifted almost verbatim from DTcones.m by Charlie Hass but modified by Greg Horwitz to analyze responses to randomly interleaved temporal frequencies and limit the temporal integration window of the ideal observer.
+  * `IsoSampConeCurrents` computes the signal-to-noise of an ideal observer of currents across cone photoreceptor cell membranes. Lifted almost verbatim from DTcones.m by Charlie Hass but modified by Greg Horwitz to analyze responses to randomly interleaved temporal frequencies and limit the temporal integration window of the ideal observer. The cone current model requires functions from the Psychophysics Toolbox (http://psychtoolbox.org/).
+
   
   * `lensDensity_smj.m` Tabulated lens optical density values from Stockman, MacLeod, and Johnson (1993) http://www.cvrl.org/database/text/maclens/lenssmj.htm. Used by IsoSampConeCurrents.m to estimate absorption of light in the lens.
   
   * `MakeFigure5.m` Code that re-creates the main figure of the manuscript, Figure 5, which shows the signal-to-noise ratio at four levels of the visual system: cone photon absorptions, cone currents, LGN populations, and behavioral choices.
   
   * `RGC_RF_sizes.m` Code that compares several estimates of magnocellular (parasol) and parvocellular (midget) RF sizes from the literature. Data are in the Excel spreadsheet `RGC_RFsizes_vs_eccentricity`.
-  
- The cone current model requires functions from the Psychophysics Toolbox (http://psychtoolbox.org/).
